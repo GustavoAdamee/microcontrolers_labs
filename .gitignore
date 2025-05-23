@@ -1,0 +1,45 @@
+# Ignore everything by default
+*
+
+# But allow assembly source files
+!*.s
+
+# Allow directories (so git can traverse them)
+!*/
+
+# Allow specific files we might want to keep
+!.gitignore
+!readme.txt
+!README.md
+
+# Explicitly ignore ALL common build and IDE files
+*.o
+*.axf
+*.map
+*.htm
+*.build_log.htm
+*.lnp
+*.dep
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+*.scvd
+*.rar
+
+# Ignore build directories
+Objects/
+Listings/
+
+# Additional Keil µVision files
+*.crf
+*.d
+*.hex
+*.bin
+*.elf
+
+# Event recorder files
+EventRecorderStub.scvd
+
+# Archive files
+*.rar
+*.zip
