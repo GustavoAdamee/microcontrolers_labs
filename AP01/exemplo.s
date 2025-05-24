@@ -25,7 +25,7 @@ ramdom_num_pos EQU 0x20000400
 prime_num_pos  EQU 0x20000500
 
 Start								;Label Start ... void main(void)
-; Comece o c�digo aqui <=========================================================
+; Comece o codigo aqui <=========================================================
 
 ;-----------------------------------------------------------------------
 ;					lista de números aleatórios: 
@@ -83,7 +83,7 @@ Start								;Label Start ... void main(void)
 		
 loop		
 			CMP 	R3, R4
-			BEQ 	fim					;TODO: Chamar buuble sort aqui!
+			BEQ 	bubble_sort			;finalou a classificação dos primos				
 			
 			BL 		primo				;retorna em R7 o valor 0 ou 1
 			CMP 	R7, #1
@@ -95,13 +95,7 @@ loop
 nao_primo	
 			ADD 	R4, R4, #1			;incrementa em 1 até chegar em 20
 			B 		loop
-			
-;TODO: Implmentar aqui o buuble sort ao invés do fim!
-fim
-			NOP
-			B 		fim
-		
-		
+
 		
 ;-----------------------------------------------------------------------
 ;			Verifica se o numero em questão é primo
@@ -119,6 +113,11 @@ loop_primo
 			BEQ		retorna_primo
 ;-----------------------------------------------------------------------
 ;			Exemplo:
+;			R0 = 10
+;			R5(iterador) = 2
+;			R6 = 10 / 2 = 5
+;			R6 = 5 * R5 = 10 -> igual a R0 -> nao_primo
+;			
 ;-----------------------------------------------------------------------			
 			UDIV	R6, R0, R5
 			MUL		R6, R6, R5
@@ -136,12 +135,68 @@ retorna_nao_primo
 			BX 		LR
 			
 		
-		
-		
-		
-	
-	
-; Final do c�digo aqui <=========================================================
+;-----------------------------------------------------------------------
+;			Bubble sort
+;			Ordena os números primos
+;-----------------------------------------------------------------------		
+bubble_sort
+			LDR 	R1, =prime_num_pos	;cabeça da memoria onde estao os numeros primos
+			MOV 	R2, #0				;R2 = quantidade de primos
+			LDR		R3, =prime_num_pos	;ponteiro para contar quantidade de primos
+
+count_prim
+			LDRB 	R0, [R3], #1		;leitura dos valores primos
+			CMP 	R0, #0				;caso seja 0 -> fim da contagem
+			BEQ		start_bubble
+			ADD 	R2, R2, #1			;incrementa em 1 até chegar em 20
+			B 		count_prim
+
+start_bubble
+			CMP 	R2, #1
+			BLE		fim					;se só tem 1 ou 0 primos, não precisa ordenar
+			
+			SUB 	R2, R2, #1			;R2 = quantidade de primos - 1 (limite do loop externo)
+			MOV 	R3, #0				;iterador externo
+
+loop_ext
+			CMP		R2, R3
+			BGE		fim					;R3 < R2 -> continua o loop externo
+			
+			MOV 	R4, #0				;iterador interno
+			SUB 	R8, R2, R3			;R8 = limite do loop interno (quantidade de primos - iterador externo)
+
+loop_int	
+			CMP 	R8, R4
+			BEQ 	loop_int_done		;se o iterador interno for igual ao externo, reinicia o loop externo
+
+			;indice para o primeiro valor da comparação, na posição do iterador j
+			LDRB 	R6, [R1, R4]		;carrega o valor do endereço R1 + R4
+			ADD		R9, R4, #1
+			LDRB 	R7, [R1, R9]		;carrega o valor do endereço R1 + R4 + 1
+			
+			CMP 	R6, R7
+			BLE no_swap					;se o primeiro valor for menor ou igual ao segundo, continua
+			
+			;swap
+			STRB 	R6, [R1, R9]
+			STRB 	R7, [R1, R4]
+			
+no_swap
+			ADD 	R4, R4, #1			;incrementa o iterador interno
+			B 		loop_int			;volta para o loop interno
+
+loop_int_done
+			ADD 	R3, R3, #1			;incrementa o iterador externo
+			B 		loop_ext
+
+;-----------------------------------------------------------------------
+;			Fim da execução
+;-----------------------------------------------------------------------
+fim
+			NOP
+			B 		fim
+
+; Final do codigo aqui <=========================================================
     NOP
     ALIGN                       	;garante que o fim da se��o est� alinhada 
     END                         	;fim do arquivo
