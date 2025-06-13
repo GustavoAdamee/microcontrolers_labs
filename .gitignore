@@ -7,6 +7,9 @@
 # Allow directories (so git can traverse them)
 !*/
 
+# Allow pdf files
+!*.pdf
+
 # Allow specific files we might want to keep
 !.gitignore
 !readme.txt
