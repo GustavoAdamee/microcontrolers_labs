@@ -39,7 +39,8 @@
 	IMPORT  SysTick_Wait1ms			
 	IMPORT  GPIO_Init
 	IMPORT  PortN_Output
-	IMPORT  PortJ_Input	
+	IMPORT  PortJ_Input
+    IMPORT  PortF_Output
 ;################################################################################
 ; Função main()
 Start  		
@@ -48,37 +49,180 @@ Start
 	BL		GPIO_Init       	       	;Chama a subrotina que inicializa os GPIO
 
 MainLoop
-	BL		PortJ_Input					;Chama a subrotina que lê o estado das chaves e coloca o resultado em R0
-Verifica_Nenhuma
-	CMP		R0, #2_00000001				;Verifica se nenhuma chave está pressionada
-	BNE		Verifica_SW1				;Se o teste viu que tem pelo menos alguma chave pressionada pula
-	MOV		R0, #0						;Não acender nenhum LED
-	BL		PortN_Output				;Chamar a função para não acender nenhum LED
-	B		MainLoop					;Se o teste viu que nenhuma chave está pressionada, volta para o laço principal
-Verifica_SW1	
-	CMP		R0, #2_00000000				;Verifica se somente a chave SW1 está pressionada
-	BNE		MainLoop					;Se o teste falhou, volta para o início do laço principal
-	BL		Pisca_LED					;Chama a rotina para piscar LED
-	B		MainLoop					;Volta para o laço principal
+	MOV		R4, #0						;R4 -> Modo de operação
+	MOV		R5, #0						;R5 -> Velocidade
+	MOV		R6, #0						;R6 -> Estado do cavaleiro
+	MOV		R7, #0						;R7 -> Estado do contador
+	
+	BL 		Testar_Chaves       		; Troca modo ou velocidade, se necessário
+    BL 		Acender_LEDs        		; Acende LED conforme o estado atual e MUDA o estado
+    BL 		Esperar_Tempo       		; Espera o tempo configurado
+	
+	B		MainLoop					; Repete o ciclo
 
 ;################################################################################
-; Função Pisca_LED
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: Não tem
+; Função para testar as chaves Switch1 e Switch2
 ;################################################################################
-Pisca_LED
-	MOV		R0, #2_10					;Setar o parâmetro de entrada da função setando o BIT1
-	PUSH	{LR}
-	BL		PortN_Output				;Chamar a função para acender o LED1
-	MOV		R0, #500					;Carregar o parâmetro da chamada da rotina SysTick
-	BL		SysTick_Wait1ms				;Chamar a rotina Systick para esperar 500ms
-	MOV		R0, #0						;Setar o parâmetro de entrada da função apagando o BIT1
-	BL		PortN_Output				;Chamar a rotina para apagar o LED
-	MOV		R0, #500					;Carregar o parâmetro da chamada da rotina SysTick
-	BL		SysTick_Wait1ms				;Chamar a rotina Systick para esperar 500ms
-	POP		{LR}
-	BX		LR						 	;return
+Testar_Chaves
+	BL		PortJ_Input
+	
+	; Testa se SW1 está pressionada bit 0 == 0
+	TST		R0, #0x01					;0x01 -> #0b00000001
+	BEQ Alterna_Modo
 
+	; Testa se SW2 está pressionada bit 1 == 0
+	TST 	R0, #0x02  					;0x02 -> #0b00000010
+    BEQ 	Alterna_Velocidade 
+	
+	BX 		LR                  		; Retorna para o loop principal
+	
+;################################################################################
+; Função para alterar o modo de funcionamento
+; Com debounce
+;################################################################################
+Alterna_Modo
+    ; Trocar modo de operação
+    CMP 	R4, #0    					; Compara R4 com 0
+	ITE   	EQ      
+	MOVEQ 	R4, #1  					; Se igual, move 1 para R4
+	MOVNE 	R4, #0  					; Se não igual, move 0 para R4
+         
+    ; Debounce
+    MOV 	R0, #100
+    BL 		SysTick_Wait1ms
+
+Espera_Soltar_SW1
+	; Espera soltar a chave para evitar multiplas trocas
+    BL 		PortJ_Input
+    TST 	R0, #0x01					;0x01 -> #0b00000001   
+    BEQ 	Espera_Soltar_SW1  
+
+    BX 		LR                  		; Retorna ao loop
+	
+;################################################################################
+; Função para alterar a velocidade
+; Com debounce
+;################################################################################
+Alterna_Velocidade
+    ; Alterna velocidade (R5: 0 → 1 → 2 → 0)
+    ADD 	R5, R5, #1
+    CMP 	R5, #3
+    MOVGE 	R5, #0           			; Se R5 >= 3, volta para 0
+
+    ; Debounce
+    MOV 	R0, #100
+    BL 		SysTick_Wait1ms
+
+Espera_Soltar_SW2
+	; Espera soltar a chave para evitar multiplas trocas
+    BL 		PortJ_Input
+    TST 	R0, #0x02  					;0x02 -> #0b00000010
+    BEQ 	Espera_Soltar_SW2  			; Enquanto pressionada, espera
+
+    BX 		LR                  		; Retorna ao loop
+	
+;################################################################################
+; Função para esperar o tempo de acendimento dos LEDS
+;################################################################################
+Esperar_Tempo
+    CMP 	R5, #0
+    BEQ 	Espera_1000ms
+    CMP 	R5, #1
+    BEQ 	Espera_500ms
+    CMP 	R5, #2
+    BEQ 	Espera_200ms
+
+Espera_1000ms
+    MOV 	R0, #1000
+    BL 		SysTick_Wait1ms
+    BX 		LR
+
+Espera_500ms
+    MOV 	R0, #500
+    BL 		SysTick_Wait1ms
+    BX 		LR
+
+Espera_200ms
+    MOV 	R0, #200
+    BL 		SysTick_Wait1ms
+    BX 		LR
+
+;################################################################################
+; Função para orquestrar o acendimento dos LEDS
+;################################################################################
+Acender_LEDs
+    CMP 	R4, #0
+    BEQ 	Passeio_Cavaleiro
+    B 		Contador_Binario
+
+;################################################################################
+; Função da lógica do passeio do cavaleiro
+;################################################################################
+Passeio_Cavaleiro
+    CMP 	R6, #0
+    BEQ 	Estado_0
+    CMP 	R6, #1
+    BEQ 	Estado_1
+	CMP 	R6, #2
+    BEQ 	Estado_2
+	CMP 	R6, #3
+    BEQ 	Estado_3
+	CMP 	R6, #4
+    BEQ 	Estado_4
+	CMP 	R6, #5
+    BEQ 	Estado_5	
+
+Estado_0
+    MOV 	R0, #2_0001    ; Acende D1
+    BL 		PortN_Output
+    ADD 	R6, R6, #1     ; Próximo estado
+    B 		Fim_Acender
+
+Estado_1
+    MOV 	R0, #2_0010    ; Acende D2
+    BL 		PortN_Output
+    ADD 	R6, R6, #1
+    B 		Fim_Acender
+	
+Estado_2
+    MOV 	R0, #2_0100    ; Acende D3
+    BL 		PortN_Output
+    ADD 	R6, R6, #1
+    B 		Fim_Acender
+	
+Estado_3
+    MOV 	R0, #2_1000    ; Acende D4
+    BL 		PortN_Output
+    ADD 	R6, R6, #1
+    B 		Fim_Acender
+	
+Estado_4
+    MOV 	R0, #2_0100    ; Volta para D3
+    BL 		PortN_Output
+    ADD 	R6, R6, #1
+    B 		Fim_Acender
+
+Estado_5
+    MOV 	R0, #2_0010    ; Volta para D2
+    BL 		PortN_Output
+    MOV 	R6, #0         ; Volta para o estado 0
+    B 		Fim_Acender
+
+
+;################################################################################
+; Função da lógica do contador
+;################################################################################
+Contador_Binario
+    MOV 	R0, R7
+    BL 		PortN_Output
+
+    ADD 	R7, R7, #1
+    CMP 	R7, #16
+    BNE 	Fim_Acender
+    MOV 	R7, #0
+
+Fim_Acender
+    BX LR
 ;################################################################################
 ; Fim do Arquivo
 ;################################################################################

@@ -10,6 +10,9 @@
 # Allow pdf files
 !*.pdf
 
+# Allow svg files
+!*.svg
+
 # Allow specific files we might want to keep
 !.gitignore
 !readme.txt

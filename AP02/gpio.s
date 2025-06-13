@@ -52,8 +52,8 @@ GPIO_PORTN               	EQU		2_001000000000000
 	AREA    |.text|, CODE, READONLY, ALIGN=2
 	; Se alguma fun��o do arquivo for chamada em outro arquivo	
     EXPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
-	EXPORT PortF_Output			; Permite chamar PortN_Output de outro arquivo
-	EXPORT PortN_Output
+	EXPORT PortF_Output			; Permite chamar PortF_Output de outro arquivo
+	EXPORT PortN_Output			; Permite chamar PortN_output de outro arquivo
 	EXPORT PortJ_Input          ; Permite chamar PortJ_Input de outro arquivo
 					
 ;################################################################################
