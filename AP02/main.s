@@ -174,37 +174,37 @@ Passeio_Cavaleiro
 
 Estado_0
     MOV 	R0, #2_0001    ; Acende D1
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     ADD 	R6, R6, #1     ; Próximo estado
     B 		Fim_Acender
 
 Estado_1
     MOV 	R0, #2_0010    ; Acende D2
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     ADD 	R6, R6, #1
     B 		Fim_Acender
 	
 Estado_2
     MOV 	R0, #2_0100    ; Acende D3
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     ADD 	R6, R6, #1
     B 		Fim_Acender
 	
 Estado_3
     MOV 	R0, #2_1000    ; Acende D4
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     ADD 	R6, R6, #1
     B 		Fim_Acender
 	
 Estado_4
     MOV 	R0, #2_0100    ; Volta para D3
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     ADD 	R6, R6, #1
     B 		Fim_Acender
 
 Estado_5
     MOV 	R0, #2_0010    ; Volta para D2
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
     MOV 	R6, #0         ; Volta para o estado 0
     B 		Fim_Acender
 
@@ -214,15 +214,55 @@ Estado_5
 ;################################################################################
 Contador_Binario
     MOV 	R0, R7
-    BL 		PortN_Output
+    BL 		Acender_LEDs_Completo
 
     ADD 	R7, R7, #1
     CMP 	R7, #16
     BNE 	Fim_Acender
     MOV 	R7, #0
 
+;#
+; Função para lógica de acender os LEDS
+;#
+Acender_LEDs_Completo
+    PUSH    {R6-R7}
+
+    ;------------------------------------------
+    ; Port F - Bit 0 (PF0) e Bit 1 (PF4)
+    ;------------------------------------------
+    MOV     R6, R0           ; Copia valor completo
+    AND     R6, R6, #3       ; Máscara para pegar bits 0 e 1
+
+    ; Mover bit 1 (PF4) para posição 4
+    MOV     R7, R6           ; Copia
+    AND     R7, R7, #2       ; Isola bit 1
+    LSL     R7, R7, #3       ; Move para posição 4 (PF4)
+    
+    ; Bit 0 (PF0) já está no lugar certo
+    AND     R6, R6, #1       ; Isola bit 0
+
+    ADD     R6, R6, R7       ; Soma PF0 + PF4
+
+    ; Acende no Port F
+    MOV     R0, R6
+    BL      PortF_Output
+
+    ;------------------------------------------
+    ; Port N - Bit 2 (PN0) e Bit 3 (PN1)
+    ;------------------------------------------
+    MOV     R6, R0           ; Copia valor completo
+    AND     R6, R6, #0x0C    ; Máscara para pegar bits 2 e 3
+    LSR     R6, R6, #2       ; Move bits para posição correta (bits 0 e 1)
+
+    ; Acende no Port N
+    MOV     R0, R6
+    BL      PortN_Output
+
+    POP     {R6-R7}
+    BX      LR
+
 Fim_Acender
-    BX LR
+    BX      LR
 ;################################################################################
 ; Fim do Arquivo
 ;################################################################################
