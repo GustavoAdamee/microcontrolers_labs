@@ -48,11 +48,11 @@ Start
 	BL		SysTick_Init				;Chama a subrotina para Inicializar o SysTick
 	BL		GPIO_Init       	       	;Chama a subrotina que inicializa os GPIO
 
-MainLoop
 	MOV		R4, #0						;R4 -> Modo de operação
 	MOV		R5, #0						;R5 -> Velocidade
 	MOV		R6, #0						;R6 -> Estado do cavaleiro
 	MOV		R7, #0						;R7 -> Estado do contador
+MainLoop
 	
 	BL 		Testar_Chaves       		; Troca modo ou velocidade, se necessário
     BL 		Acender_LEDs        		; Acende LED conforme o estado atual e MUDA o estado
