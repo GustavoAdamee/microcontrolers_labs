@@ -279,6 +279,8 @@ Acender_LEDs_Completo
     POP {R6-R7}
     BX LR
 
+Fim_Acender
+    BX LR
 
 ;################################################################################
 ; Fim do Arquivo
