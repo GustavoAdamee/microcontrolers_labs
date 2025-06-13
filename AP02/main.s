@@ -221,48 +221,65 @@ Contador_Binario
     BNE 	Fim_Acender
     MOV 	R7, #0
 
-;#
-; Função para lógica de acender os LEDS
-;#
 Acender_LEDs_Completo
-    PUSH    {R6-R7}
+    PUSH {R6-R7}
+
+    ; Entrada R0: 
+    ; Bit 3 - PN1 (LED D1)
+    ; Bit 2 - PN0 (LED D2)
+    ; Bit 1 - PF4 (LED D3)
+    ; Bit 0 - PF0 (LED D4)
 
     ;------------------------------------------
-    ; Port F - Bit 0 (PF0) e Bit 1 (PF4)
+    ; Port F - Bit 1 (PF4) e Bit 0 (PF0)
     ;------------------------------------------
-    MOV     R6, R0           ; Copia valor completo
-    AND     R6, R6, #3       ; Máscara para pegar bits 0 e 1
+    MOV R6, R0           ; Copia o valor completo
+    AND R6, R6, #0x03    ; Pega só os bits 0 e 1
 
-    ; Mover bit 1 (PF4) para posição 4
-    MOV     R7, R6           ; Copia
-    AND     R7, R7, #2       ; Isola bit 1
-    LSL     R7, R7, #3       ; Move para posição 4 (PF4)
-    
+    ; Mover bit 1 (PF4) para a posição correta (bit 4)
+    MOV R7, R6
+    AND R7, R7, #0x02    ; Isola bit 1 (PF4)
+    LSR R7, R7, #1       ; Move para bit 0
+    LSL R7, R7, #4       ; Move para bit 4 (PF4)
+
     ; Bit 0 (PF0) já está no lugar certo
-    AND     R6, R6, #1       ; Isola bit 0
+    AND R6, R6, #0x01    ; Isola bit 0 (PF0)
 
-    ADD     R6, R6, R7       ; Soma PF0 + PF4
+    ADD R6, R6, R7       ; Soma PF0 e PF4
 
-    ; Acende no Port F
-    MOV     R0, R6
-    BL      PortF_Output
+    ; Atualiza LEDs no Port F
+    MOV R0, R6
+    BL PortF_Output
 
     ;------------------------------------------
-    ; Port N - Bit 2 (PN0) e Bit 3 (PN1)
+    ; Port N - Bit 3 (PN1) e Bit 2 (PN0)
     ;------------------------------------------
-    MOV     R6, R0           ; Copia valor completo
-    AND     R6, R6, #0x0C    ; Máscara para pegar bits 2 e 3
-    LSR     R6, R6, #2       ; Move bits para posição correta (bits 0 e 1)
+    MOV R6, R0
+    AND R6, R6, #0x0C    ; Pega bits 2 e 3
+    LSR R6, R6, #2       ; Move bits para posição 0 e 1
 
-    ; Acende no Port N
-    MOV     R0, R6
-    BL      PortN_Output
+    ; Agora ajustar para as posições corretas no PORT N
+    ; Bit 0 -> PN0 -> Espera bit 1
+    ; Bit 1 -> PN1 -> Espera bit 2
 
-    POP     {R6-R7}
-    BX      LR
+    MOV R7, R6
+    AND R7, R7, #0x01    ; Isola bit 0 (PN0)
+    LSL R7, R7, #1       ; Move para posição 1
 
-Fim_Acender
-    BX      LR
+    MOV R6, R6
+    AND R6, R6, #0x02    ; Isola bit 1 (PN1)
+    LSL R6, R6, #1       ; Move para posição 2
+
+    ADD R6, R6, R7       ; Soma PN0 e PN1
+
+    ; Atualiza LEDs no Port N
+    MOV R0, R6
+    BL PortN_Output
+
+    POP {R6-R7}
+    BX LR
+
+
 ;################################################################################
 ; Fim do Arquivo
 ;################################################################################
