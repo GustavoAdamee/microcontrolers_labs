@@ -227,18 +227,23 @@ Acender_LEDs_Completo
     ; Copiar entrada
     MOV R6, R0
 
-    ; Atualizar Port F
-    AND R7, R6, #2_00010001   ; Pega apenas bits PF4 e PF0
+    ; --------------------------------------
+    ; Port F - bits PF4 (bit 4) e PF0 (bit 0)
+    ; --------------------------------------
+    AND R7, R6, #2_00010001   ; Isola bits PF4 e PF0
     MOV R0, R7
     BL PortF_Output
 
-    ; Atualizar Port N
-    AND R7, R6, #2_00000110   ; Pega apenas bits PN1 e PN0
+    ; --------------------------------------
+    ; Port N - bits PN1 (bit 2) e PN0 (bit 1)
+    ; --------------------------------------
+    AND R7, R6, #2_00000110   ; Isola bits PN1 e PN0
     MOV R0, R7
     BL PortN_Output
 
     POP {R6-R7}
     BX LR
+
 
 
 Fim_Acender
