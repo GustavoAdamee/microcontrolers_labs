@@ -173,40 +173,40 @@ Passeio_Cavaleiro
     BEQ 	Estado_5	
 
 Estado_0
-    MOV 	R0, #2_0001    ; Acende D1
-    BL 		Acender_LEDs_Completo
-    ADD 	R6, R6, #1     ; Próximo estado
-    B 		Fim_Acender
+    MOV  R0, #2_00000100    ; PN1 (D1)
+    BL   Acender_LEDs_Completo
+    ADD  R6, R6, #1
+    B    Fim_Acender
 
 Estado_1
-    MOV 	R0, #2_0010    ; Acende D2
-    BL 		Acender_LEDs_Completo
-    ADD 	R6, R6, #1
-    B 		Fim_Acender
-	
+    MOV  R0, #2_00000010    ; PN0 (D2)
+    BL   Acender_LEDs_Completo
+    ADD  R6, R6, #1
+    B    Fim_Acender
+
 Estado_2
-    MOV 	R0, #2_0100    ; Acende D3
-    BL 		Acender_LEDs_Completo
-    ADD 	R6, R6, #1
-    B 		Fim_Acender
-	
+    MOV  R0, #2_00010000    ; PF4 (D3)
+    BL   Acender_LEDs_Completo
+    ADD  R6, R6, #1
+    B    Fim_Acender
+
 Estado_3
-    MOV 	R0, #2_1000    ; Acende D4
-    BL 		Acender_LEDs_Completo
-    ADD 	R6, R6, #1
-    B 		Fim_Acender
-	
+    MOV  R0, #2_00000001    ; PF0 (D4)
+    BL   Acender_LEDs_Completo
+    ADD  R6, R6, #1
+    B    Fim_Acender
+
 Estado_4
-    MOV 	R0, #2_0100    ; Volta para D3
-    BL 		Acender_LEDs_Completo
-    ADD 	R6, R6, #1
-    B 		Fim_Acender
+    MOV  R0, #2_00010000    ; PF4 (D3)
+    BL   Acender_LEDs_Completo
+    ADD  R6, R6, #1
+    B    Fim_Acender
 
 Estado_5
-    MOV 	R0, #2_0010    ; Volta para D2
-    BL 		Acender_LEDs_Completo
-    MOV 	R6, #0         ; Volta para o estado 0
-    B 		Fim_Acender
+    MOV  R0, #2_00000010    ; PN0 (D2)
+    BL   Acender_LEDs_Completo
+    MOV  R6, #0
+    B    Fim_Acender
 
 
 ;################################################################################
@@ -224,60 +224,22 @@ Contador_Binario
 Acender_LEDs_Completo
     PUSH {R6-R7}
 
-    ; Entrada R0: 
-    ; Bit 3 - PN1 (LED D1)
-    ; Bit 2 - PN0 (LED D2)
-    ; Bit 1 - PF4 (LED D3)
-    ; Bit 0 - PF0 (LED D4)
+    ; Copiar entrada
+    MOV R6, R0
 
-    ;------------------------------------------
-    ; Port F - Bit 1 (PF4) e Bit 0 (PF0)
-    ;------------------------------------------
-    MOV R6, R0           ; Copia o valor completo
-    AND R6, R6, #0x03    ; Pega só os bits 0 e 1
-
-    ; Mover bit 1 (PF4) para a posição correta (bit 4)
-    MOV R7, R6
-    AND R7, R7, #0x02    ; Isola bit 1 (PF4)
-    LSR R7, R7, #1       ; Move para bit 0
-    LSL R7, R7, #4       ; Move para bit 4 (PF4)
-
-    ; Bit 0 (PF0) já está no lugar certo
-    AND R6, R6, #0x01    ; Isola bit 0 (PF0)
-
-    ADD R6, R6, R7       ; Soma PF0 e PF4
-
-    ; Atualiza LEDs no Port F
-    MOV R0, R6
+    ; Atualizar Port F
+    AND R7, R6, #2_00010001   ; Pega apenas bits PF4 e PF0
+    MOV R0, R7
     BL PortF_Output
 
-    ;------------------------------------------
-    ; Port N - Bit 3 (PN1) e Bit 2 (PN0)
-    ;------------------------------------------
-    MOV R6, R0
-    AND R6, R6, #0x0C    ; Pega bits 2 e 3
-    LSR R6, R6, #2       ; Move bits para posição 0 e 1
-
-    ; Agora ajustar para as posições corretas no PORT N
-    ; Bit 0 -> PN0 -> Espera bit 1
-    ; Bit 1 -> PN1 -> Espera bit 2
-
-    MOV R7, R6
-    AND R7, R7, #0x01    ; Isola bit 0 (PN0)
-    LSL R7, R7, #1       ; Move para posição 1
-
-    MOV R6, R6
-    AND R6, R6, #0x02    ; Isola bit 1 (PN1)
-    LSL R6, R6, #1       ; Move para posição 2
-
-    ADD R6, R6, R7       ; Soma PN0 e PN1
-
-    ; Atualiza LEDs no Port N
-    MOV R0, R6
+    ; Atualizar Port N
+    AND R7, R6, #2_00000110   ; Pega apenas bits PN1 e PN0
+    MOV R0, R7
     BL PortN_Output
 
     POP {R6-R7}
     BX LR
+
 
 Fim_Acender
     BX LR
